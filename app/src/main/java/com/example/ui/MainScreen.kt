@@ -52,6 +52,8 @@ fun MainScreen(
     val graphicsSettings by viewModel.graphicsSettings.collectAsState()
     val memoryPlan by viewModel.memoryPlan.collectAsState()
     val userMessage by viewModel.userMessage.collectAsState()
+    val drivers by viewModel.drivers.collectAsState()
+    val selectedDriver by viewModel.selectedDriver.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -114,6 +116,18 @@ fun MainScreen(
                     }
                 },
                 actions = {
+                    // Open Setup / Package Downloader
+                    IconButton(
+                        onClick = { viewModel.openSetupWizard() },
+                        modifier = Modifier.testTag("open_setup_wizard_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CloudDownload,
+                            contentDescription = "Runtime & Driver Manager",
+                            tint = CyberCyan
+                        )
+                    }
+
                     // Quick Switcher: Snapdragon Path A vs Mali Path B
                     FilterChip(
                         selected = hardware.isSnapdragonAdreno,
@@ -199,11 +213,18 @@ fun MainScreen(
                 AppTab.CONFIG -> ConfigTab(
                     box64Settings = box64Settings,
                     graphicsSettings = graphicsSettings,
+                    drivers = drivers,
+                    selectedDriver = selectedDriver,
                     isSnapdragon = hardware.isSnapdragonAdreno,
                     onUpdateBox64 = { viewModel.updateBox64Settings(it) },
-                    onUpdateGraphics = { viewModel.updateGraphicsSettings(it) }
+                    onUpdateGraphics = { viewModel.updateGraphicsSettings(it) },
+                    onSelectDriver = { viewModel.selectDriver(it) },
+                    onDownloadDriver = { viewModel.downloadDriver(it) }
                 )
-                AppTab.BLUEPRINTS -> BlueprintsTab(hardware = hardware)
+                AppTab.BLUEPRINTS -> BlueprintsTab(
+                    hardware = hardware,
+                    dynamicLaunchScript = viewModel.getDynamicLaunchScript()
+                )
             }
         }
     }
@@ -603,9 +624,13 @@ fun StorageTab(
 fun ConfigTab(
     box64Settings: com.example.model.Box64Settings,
     graphicsSettings: com.example.model.GraphicsSettings,
+    drivers: List<com.example.model.DriverPackage>,
+    selectedDriver: com.example.model.DriverPackage,
     isSnapdragon: Boolean,
     onUpdateBox64: (com.example.model.Box64Settings) -> Unit,
-    onUpdateGraphics: (com.example.model.GraphicsSettings) -> Unit
+    onUpdateGraphics: (com.example.model.GraphicsSettings) -> Unit,
+    onSelectDriver: (String) -> Unit,
+    onDownloadDriver: (String) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier
@@ -614,6 +639,15 @@ fun ConfigTab(
         verticalArrangement = Arrangement.spacedBy(14.dp),
         contentPadding = PaddingValues(vertical = 12.dp)
     ) {
+        // Dynamic Driver Overlays Manager
+        item {
+            DriverManagerCard(
+                drivers = drivers,
+                selectedDriver = selectedDriver,
+                onSelectDriver = onSelectDriver,
+                onDownloadDriver = onDownloadDriver
+            )
+        }
         // Box64 Dynarec Tuning Card
         item {
             Card(
@@ -769,7 +803,10 @@ fun ConfigTab(
 }
 
 @Composable
-fun BlueprintsTab(hardware: com.example.model.HardwareProfile) {
+fun BlueprintsTab(
+    hardware: com.example.model.HardwareProfile,
+    dynamicLaunchScript: String
+) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -783,6 +820,15 @@ fun BlueprintsTab(hardware: com.example.model.HardwareProfile) {
                 style = MaterialTheme.typography.labelLarge,
                 color = CyberCyan,
                 fontWeight = FontWeight.Bold
+            )
+        }
+
+        // Dynamic Driver-Aware Launch Script
+        item {
+            ConfigCodeBlock(
+                title = "dynamic_launch_vortex.sh (Active Driver Bindings)",
+                code = dynamicLaunchScript,
+                language = "bash"
             )
         }
 
