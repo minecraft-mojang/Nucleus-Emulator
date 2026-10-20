@@ -1,0 +1,6 @@
+{
+  "name": "VortexNative",
+  "description": "Ultra-optimized x86_64 to ARM64 Windows emulation container with Box64 JIT, DXVK/VKD3D Vulkan translation, hardware-adaptive Snapdragon Adreno / MediaTek Mali pipelines, and virtual C: drive VFS.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
